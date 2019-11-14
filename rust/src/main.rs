@@ -37,6 +37,9 @@ fn compute_regret(p1_choice: &Choice, p2_choice: &Choice) -> Vec<f32> {
 fn compute_regret_matching_strategy_profile(
         hist: &[(Choice, Choice)]
     ) -> Vec<f32> {
+    if hist.len() == 0 {
+        return vec![1./3., 1./3., 1./3.]
+    }
     let mut cumulative_regret: Vec<f32> = vec!(0., 0., 0.);
     for pair in hist.iter() {
         let regret = compute_regret(&pair.0, &pair.1);
@@ -61,15 +64,16 @@ fn get_choice(strategy: &Vec<f32>) -> Choice {
 
 fn main() {
     let mut hist: Vec<(Choice, Choice)> = Vec::new();
-    let p1_strategy = vec![0.4, 0.2, 0.4];
+    let mut p1_strategy = vec![0.4, 0.2, 0.4];
     let p2_strategy = vec![0.33, 0.23, 0.44];
     for _ in 0..50 {
+        p1_strategy = compute_regret_matching_strategy_profile(&hist);
         let p1_choice = get_choice(&p1_strategy);
         let p2_choice = get_choice(&p2_strategy);
         let pair = (p1_choice, p2_choice);
         hist.push(pair);
+        println!("{:?}", pair)
     }
-    let profile = compute_regret_matching_strategy_profile(&hist);
-    println!("{:?}", profile);
+    println!("{:?}", p1_strategy);
 }
 
