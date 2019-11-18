@@ -1,7 +1,5 @@
 
-from random import choices
 from enum import Enum
-from functools import reduce
 
 class Game():
     def choose(self, choice):
