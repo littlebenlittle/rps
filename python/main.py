@@ -1,6 +1,11 @@
 
 from random import choices
-from game import Game, Player, Strategy, Outcome, Choice
+from rps import Game, Player, Strategy, Outcome, Choice
+
+# TODO: use enum? 2019-11-18Z11:39:39
+WIN = "win"
+LOSE = "loss"
+TIE = "tie"
 
 def get_outcome(p1_choice, p2_choice):
     if p1_choice == RPSChoice.ROCK:
@@ -38,11 +43,11 @@ class RPSStrategy(Strategy):
     def sample(self):
         p1_choice = choices(
             [RPSChoice.ROCK, RPSChoice.PAPER, RPSChoice.SCISSORS],
-            weights=list(self.P1_STRAT)
+            weights=list(P1_STRAT)
         )[0]
         p2_choice = choices(
             [RPSChoice.ROCK, RPSChoice.PAPER, RPSChoice.SCISSORS],
-            weights=list(self.P2_STRAT)
+            weights=list(P2_STRAT)
         )[0]
         return get_outcome(p1_choice, p2_choice)
 
@@ -82,21 +87,17 @@ class RPSPlayer(Player):
                 return (1, 2, 0)
         raise ValueError(f'choice must be one of "win", "tie", "loss"; got {choice}')
 
-    def _regret(self, strategy):
-        u_opt = 1
+    def _regret(self, outcome):
         for choice in list(RPSChoice):
-            u = self.utility()
+            u_opt = 1
 
-    def utility(self, strategy):
-        u = 0
-        n = 1000
-        for _ in range(n):
-            outcome = strategy.sample()
-            if outcome == RPSOutcome.WIN:
-                u += 1
-            elif outcome == RPSOutcome.LOSE:
-                u -= 1
-        return u/n
+    def utility(self, outcome):
+        if outcome == WIN:
+            return 1
+        if outcome == LOSE:
+            return -1
+        if outcome == TIE:
+            return 0
 
 
 def main():
