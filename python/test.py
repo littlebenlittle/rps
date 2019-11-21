@@ -28,6 +28,7 @@ class RegretMatchingPlayer(RPSPlayer):
         self.strategy = init_strategy
         self.cumulative_regret = np.array([0, 0, 0])
 
+    # TODO: this is not implemented 2019-11-20Z17:24:25
     def update_strategy(self, outcome):
         self.cumulative_regret += self.regret(outcome)
 

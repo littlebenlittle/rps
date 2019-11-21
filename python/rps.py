@@ -1,5 +1,6 @@
 
 import numpy as np
+# TODO: choices name is popping up too much 2019-11-20Z17:21:47
 from random import choices
 from game import Game, Player, Strategy, Outcome, Choice
 
@@ -45,6 +46,7 @@ class RPSPlayer(Player):
     def utility(self, outcome):
         p1_choice = outcome.P1_CHOICE
         p2_choice = outcome.P2_CHOICE
+        # TODO: clean this up 2019-11-20Z17:22:28
         if outcome == RPSOutcome(RPSChoice.ROCK, RPSChoice.ROCK):
             return 0
         if outcome == RPSOutcome(RPSChoice.ROCK, RPSChoice.PAPER):
