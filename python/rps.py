@@ -40,12 +40,19 @@ class RPSPlayer(Player):
         p2_choice = outcome.P2_CHOICE
         u = self.utility(outcome)
         outcomes = [RPSOutcome(c, p2_choice) for c in self.choices]
-        u_opt = max([self.utility(o) for o in outcomes])
-        return u_opt - u
+        u_ = self.utility(outcomes)
+        return np.maximum(u_ - u, 0)
 
-    def utility(self, outcome):
-        p1_choice = outcome.P1_CHOICE
-        p2_choice = outcome.P2_CHOICE
+    def utility(self, outcomes):
+        try:
+            u = []
+            for o in outcomes:
+                u.append(self._utility(o))
+            return np.array(u)
+        except TypeError:
+            return np.array([self._utility(outcomes)])
+
+    def _utility(self, outcome):
         # TODO: clean this up 2019-11-20Z17:22:28
         if outcome == RPSOutcome(RPSChoice.ROCK, RPSChoice.ROCK):
             return 0
@@ -65,6 +72,7 @@ class RPSPlayer(Player):
             return 1
         if outcome == RPSOutcome(RPSChoice.SCISSORS, RPSChoice.SCISSORS):
             return 0
+
 
     def strategy_for(self, choice):
         if choice is RPSChoice.ROCK:
