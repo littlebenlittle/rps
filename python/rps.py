@@ -1,8 +1,7 @@
 
 import numpy as np
-# TODO: choices name is popping up too much 2019-11-20Z17:21:47
-from random import choices
-from game import Game, Player, Strategy, Outcome, Choice
+from random import choices as random_choice
+from game import Player, Strategy, Outcome, Choice
 
 class RPSOutcome(Outcome):
     def __init__(self, p1_choice, p2_choice):
@@ -20,11 +19,11 @@ class RPSChoice(Choice):
 
 class RPSStrategy(Strategy):
     def sample(self):
-        p1_choice = choices(
+        p1_choice = random_choice(
             list(RPSChoice),
             weights=list(self.P1_STRAT)
         )[0]
-        p2_choice = choices(
+        p2_choice = random_choice(
             list(RPSChoice),
             weights=list(self.P2_STRAT)
         )[0]
@@ -97,6 +96,6 @@ class RegretMatchingPlayer(RPSPlayer):
         self.cumulative_regret += self.regret(outcome)
         total_regret = self.cumulative_regret.sum()
         if total_regret == 0:
-            self.strategy = NASHEQ
+            self.strategy = np.array([1.,1.,1.]) / 3.
             return
         self.strategy = self.cumulative_regret / total_regret
