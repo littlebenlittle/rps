@@ -23,35 +23,20 @@ SCISSORS_SCISSORS_OUTCOME = RPSOutcome(RPSChoice.SCISSORS, RPSChoice.SCISSORS)
 def approx_eq(a, b, tolerance):
     assert all(abs(a-b) < tolerance)
 
-class ConstantPlayer(RPSPlayer):
-    def __init__(self, strategy):
-        self.strategy = strategy
-
-class RegretMatchingPlayer(RPSPlayer):
-    def __init__(self, blind_strategy=NASHEQ):
-        super().__init__()
-        self.strategy = blind_strategy
-        self.cumulative_regret = np.array([0, 0, 0])
-
-    def update_strategy(self, outcome):
-        self.cumulative_regret += self.regret(outcome)
-        total_regret = self.cumulative_regret.sum()
-        if total_regret == 0:
-            self.strategy = NASHEQ
-            return
-        self.strategy = self.cumulative_regret / total_regret
-
 def test_RegretMatchingPlayer():
-    p1 = RegretMatchingPlayer(blind_strategy=ROCK)
-    p2 = ConstantPlayer(ROCK)
-    for _ in range(100):
-        s = RPSStrategy(p1.strategy, p2.strategy)
-        outcome = s.sample()
-        p1.update_strategy(outcome)
-    tolerance = 0.05
-    logging.debug(f'regret: {p1.cumulative_regret}')
-    logging.debug(f'strategy: {p1.strategy}')
-    approx_eq(p1.strategy, PAPER, tolerance)
+    for p2_strat, p1_opt_strat in (
+                (ROCK, PAPER),
+                (PAPER, SCISSORS),
+                (SCISSORS, ROCK),
+            ):
+        p1 = RegretMatchingPlayer(blind_strategy=NASHEQ)
+        p2 = ConstantPlayer(p2_strat)
+        for _ in range(1000):
+            s = RPSStrategy(p1.strategy, p2.strategy)
+            outcome = s.sample()
+            p1.update_strategy(outcome)
+        tolerance = 0.05
+        approx_eq(p1.strategy, p1_opt_strat, tolerance)
 
 def test_RegretMatchingPlayer_update_strategy():
     p1 = RegretMatchingPlayer(blind_strategy=ROCK)

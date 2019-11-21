@@ -82,10 +82,21 @@ class RPSPlayer(Player):
         if choice is RPSChoice.SCISSORS:
             return self.strategy[2]
         
+class ConstantPlayer(RPSPlayer):
+    def __init__(self, strategy):
+        self.strategy = strategy
 
-def main():
-    pass
+class RegretMatchingPlayer(RPSPlayer):
 
+    def __init__(self, blind_strategy=(np.array([1.,1.,1.]) / 3.)):
+        super().__init__()
+        self.strategy = blind_strategy
+        self.cumulative_regret = np.array([0, 0, 0])
 
-if __name__ == '__main__':
-    main()
+    def update_strategy(self, outcome):
+        self.cumulative_regret += self.regret(outcome)
+        total_regret = self.cumulative_regret.sum()
+        if total_regret == 0:
+            self.strategy = NASHEQ
+            return
+        self.strategy = self.cumulative_regret / total_regret
