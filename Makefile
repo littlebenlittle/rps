@@ -10,7 +10,7 @@ python/venv:
 		python:3.7 \
 			python -m venv /python/venv
 
-venv_install:
+venv_install: python/requirements.txt
 		docker run --rm -u $$(id -u) \
 		    -v $(CURDIR)/python:/python \
 		python:3.7 \
@@ -18,12 +18,12 @@ venv_install:
 
 venv: python/venv venv_install
 
-pytest: python/test.py
+pytest: python/test_rps.py python/test_ttt.py
 		docker run --rm -u $$(id -u) \
 		    -v $(CURDIR)/python:/python \
 		    -e DEBUG=1 \
 		benlittle6/pytest:3.7 \
-		    /python/venv/bin/pytest /python/test.py
+		    /python/venv/bin/pytest /python
 
 run_python: python/test.py
 		docker run --rm -u $$(id -u) \
