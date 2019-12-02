@@ -37,7 +37,7 @@ class Node(ABC):
 
     @property
     def children(self):
-        for c in self.children:
+        for c in self._children:
             yield c
 
 
@@ -45,7 +45,8 @@ class MCTSNode(Node):
 
     def __init__(self, state, parent=None):
         assert isinstance(state, GameState)
-        assert isinstance(parent, MCTSNode)
+        if parent:
+            assert isinstance(parent, MCTSNode)
         super().__init__(
             content=state,
             parent=parent
@@ -59,20 +60,23 @@ class MCTSNode(Node):
         return self.content
 
     @property
+    def visits(self):
+        return self._visits
+
+    @property
+    def total_utility(self):
+        return self._total_utility
+
+    @property
     def is_expanded(self):
         return self._is_expanded
 
-    @property
-    def children(self):
+    def expand(self):
         if not self.is_expanded:
-            self.expand()
-        return self.children
-
-    def _expand(self):
-        assert not self.is_expanded
-        for state in self.state.next_states():
-            self._children.append(Node(state, parent=self))
-        self._is_expanded = True
+            assert not self.is_expanded
+            for state in self.state.next_states:
+                self._children.append(MCTSNode(state, parent=self))
+            self._is_expanded = True
 
     def run_simulation(self):
         s = self.state
@@ -84,16 +88,7 @@ class MCTSNode(Node):
         if self.parent is not None:
             self.parent.backpropogate(utility)
         self._total_utility += utility
-        self.visits += 1
-
-
-def _UCB1(node):
-    from math import sqrt, log, inf
-    if node.visits == 0:
-        return inf
-    exploit = node.total_utility / node.visits
-    explore = 2 * sqrt(log(node.parent.visits)/node.visits)
-    return exploit + explore
+        self._visits += 1
 
 
 class MCTSTree:
@@ -101,12 +96,21 @@ class MCTSTree:
     def __init__(self, root):
         assert isinstance(root, MCTSNode)
         self._root = root
-        self._nodes = []
+        self._nodes = [root]
+
+    def __repr__(self):
+        s = '\n'.join(['    ' + n.__repr__() for n in self.nodes])
+        return f"<MCTSTree\nnodes:\n{s}\n>"
 
     @property
     def nodes(self):
         for n in self._nodes:
             yield n
+
+    def add_nodes(self, nodes):
+        for n in nodes:
+            assert isinstance(n, MCTSNode)
+        self._nodes.extend(nodes)
 
     @classmethod
     def from_state(cls, state):
@@ -114,17 +118,28 @@ class MCTSTree:
         return cls(root)
 
 
-def mcts(state, max_simulations):
+def _UCB1(node):
+    from math import sqrt, log, inf
+    if node.visits == 0 or node.parent is None:
+        return inf
+    exploit = node.total_utility / node.visits
+    explore = 2 * sqrt(log(node.parent.visits)/node.visits)
+    return exploit + explore
+
+
+def mcts(state, max_simulations, utility_fn):
     tree = MCTSTree.from_state(state)
     num_expanded = 0
     while num_expanded < max_simulations:
-        current = max(tree.nodes, _UCB1)
+        current = max(tree.nodes, key=_UCB1)
         while current.is_expanded:
-            current = max(current.children, _UCB1)
-        if current.num_visits == 0:
+            current = max(current.children, key=_UCB1)
+        if current.visits == 0:
             s = current.run_simulation()
             utility = utility_fn(s)
-            current.backpropogate()
+            current.backpropogate(utility)
             continue
+        current.expand()
         tree.add_nodes(current.children)
         num_expanded += 1
+    return tree
