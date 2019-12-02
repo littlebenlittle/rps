@@ -1,10 +1,58 @@
 
 import numpy as np
 from itertools import product
-from collections import namedtuple
-from heapq import heappush, heappop
 from random import choices as random_choice
-from game import Game, Player, Strategy, Outcome, Choice
+from game import Game, Player, Strategy, Outcome, Choice, DecisionTree
+
+BEGIN = np.array(
+    [[0,0,0],
+     [0,0,0],
+     [0,0,0]]
+)
+
+WIN_FILTERS = [
+    np.array(
+        [[1,1,1],
+         [0,0,0],
+         [0,0,0]]
+    ),
+    np.array(
+        [[0,0,0],
+         [1,1,1],
+         [0,0,0]]
+    ),
+    np.array(
+        [[0,0,0],
+         [0,0,0],
+         [1,1,1]]
+    ),
+    np.array(
+        [[1,0,0],
+         [1,0,0],
+         [1,0,0]]
+    ),
+    np.array(
+        [[0,1,0],
+         [0,1,0],
+         [0,1,0]]
+    ),
+    np.array(
+        [[0,0,1],
+         [0,0,1],
+         [0,0,1]]
+    ),
+    np.array(
+        [[1,0,0],
+         [0,1,0],
+         [0,0,1]]
+    ),
+    np.array(
+        [[0,0,1],
+         [0,1,0],
+         [1,0,0]]
+    ),
+]
+
 
 class TTTMove():
     def __init__(self, x, y):
