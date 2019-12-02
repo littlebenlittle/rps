@@ -3,6 +3,7 @@ import numpy as np
 from mcts import GameState
 from ttt import BEGIN, WIN_FILTERS
 
+
 class NimState(GameState):
 
     def __init__(self, num_beads, num_takeaway=3):
@@ -77,7 +78,11 @@ class TTTState(GameState):
             # compute the dot product (as a 9-dim inner product space)
             if (self.x_loc * wf).sum() == 3:
                 return True
-        return False
+            if (self.o_loc * wf).sum() == 3:
+                return True
+        # TODO: this is hard to interpret 2019-12-02Z15:34:03
+        num_marks = (self.x_loc + self.o_loc).astype(np.bool).astype(np.int).sum()
+        return num_marks == 9
 
     @property
     def next_states(self):
@@ -98,7 +103,7 @@ class TTTState(GameState):
     def get_random_next_state(self):
         # TODO: this is not efficient 2019-12-02Z13:03:16
         from random import choice
-        return choice(self.next_states)
+        return choice(list(self.next_states))
 
     @classmethod
     def from_array(cls, array):
