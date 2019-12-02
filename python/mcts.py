@@ -1,23 +1,21 @@
 
 from abc import ABC, abstractmethod, abstractproperty
 
+# TODO: centralize logging 2019-12-01Z15:30:32
 import logging
 logging.basicConfig(filename='/dev/null', level=logging.DEBUG)
 
 
 class GameState(ABC):
 
-    @abstractmethod
+    @abstractproperty
+    def is_terminal(self): pass
+
+    @abstractproperty
     def next_states(self): pass
 
     @abstractmethod
     def get_random_next_state(self): pass
-
-    @abstractproperty
-    def utility(self): pass
-
-    @abstractproperty
-    def is_terminal(self): pass
 
 
 class Node(ABC):
@@ -76,20 +74,17 @@ class MCTSNode(Node):
             self._children.append(Node(state, parent=self))
         self._is_expanded = True
 
-    def _backpropogate(self, utility):
-        if self.parent is not None:
-            self.parent._backpropogate(utility)
-        self.total_utility += utility
-        self.visits += 1
-
-    def _run_simulation(self):
+    def run_simulation(self):
         s = self.state
         while not s.is_terminal:
             s = s.get_random_next_state()
         return s
 
-    def backpropogate(self):
-        self._backpropogate(self.state.utility)
+    def backpropogate(self, utility):
+        if self.parent is not None:
+            self.parent.backpropogate(utility)
+        self._total_utility += utility
+        self.visits += 1
 
 
 def _UCB1(node):
@@ -127,6 +122,8 @@ def mcts(state, max_simulations):
         while current.is_expanded:
             current = max(current.children, _UCB1)
         if current.num_visits == 0:
+            s = current.run_simulation()
+            utility = utility_fn(s)
             current.backpropogate()
             continue
         tree.add_nodes(current.children)
