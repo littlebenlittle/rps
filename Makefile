@@ -23,13 +23,13 @@ pytest: python/test_rps.py python/test_ttt.py
 		    -v $(CURDIR)/python:/python \
 		    -e DEBUG=1 \
 		benlittle6/pytest:3.7 \
-		    /python/venv/bin/pytest /python
+		    /python/venv/bin/pytest /python/test_cli.py
 
 run_python: python/test.py
 		docker run --rm -u $$(id -u) \
 		    -v $(CURDIR)/python:/python \
-		python:3.7 \
-		    python /python/rps.py
+		benlittle6/pytest:3.7 \
+		    /python/venv/bin/python  /python/mcts.py
 
 test_rust: rust/src/main.rs
 		docker run --rm -u $$(id -u) \
