@@ -51,6 +51,7 @@ class TTTState(GameState):
     def __init__(self, x_locations, o_locations):
         self._x_loc = x_locations
         self._o_loc = o_locations
+        self._winner = None
 
     def __repr__(self):
         # TODO: pretty print Xs and Os 2019-12-02Z12:54:24
@@ -72,14 +73,8 @@ class TTTState(GameState):
 
     @property
     def is_terminal(self):
-        # TODO: implement "@cachedproperty" maybe ? 2019-12-02Z12:05:41
-        # does opcache make this ^ irrelevant?
-        for wf in WIN_FILTERS:
-            # compute the dot product (as a 9-dim inner product space)
-            if (self.x_loc * wf).sum() == 3:
-                return True
-            if (self.o_loc * wf).sum() == 3:
-                return True
+        if self.winner:
+            return True
         # TODO: this is hard to interpret 2019-12-02Z15:34:03
         num_marks = (self.x_loc + self.o_loc).astype(np.bool).astype(np.int).sum()
         return num_marks == 9
@@ -110,3 +105,16 @@ class TTTState(GameState):
         xs = (array == 1).astype(np.int)
         os = (array == 2).astype(np.int)
         return cls(xs, os)
+
+    @property
+    def winner(self):
+        # TODO: implement "@cachedproperty" maybe ? 2019-12-02Z12:05:41
+        # does opcache make this ^ irrelevant?
+        if not self._winner:
+            for wf in WIN_FILTERS:
+                # compute the dot product (as a 9-dim inner product space)
+                if (self.x_loc * wf).sum() == 3:
+                    self._winner = 'X'
+                if (self.o_loc * wf).sum() == 3:
+                    self._winner = 'O'
+        return self._winner

@@ -12,4 +12,6 @@ def test_mcts():
     tree = mcts(s, 5, lambda s: 1 if s.num_beads <= 3 else 0)
     print(tree)
     s = TTTState.from_array(BEGIN)
-    mcts(s, 5, lambda s: 1 if s.num_beads <= 3 else 0)
+    tree = mcts(s, 5, lambda s: 1 if s.winner == 'X' else (-1 if s.winner == 'O' else 0))
+    print(tree)
+    assert False
