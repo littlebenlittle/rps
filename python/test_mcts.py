@@ -10,6 +10,7 @@ logger = logging.getLogger(__name__)
 handler = logging.StreamHandler(sys.stderr)
 logger.setLevel(logging.INFO)
 
+
 def test_mcts():
     nim_state = NimState(25, 1)
     tree = mcts(
@@ -29,7 +30,7 @@ def test_mcts():
     )
     for n in sorted(tree.nodes, key=lambda n: n.visits):
         logger.info(f'{n.state} {n.visits}')
-    assert False
+
 
 def test_MCTSNode():
     nim_state = NimState(25, 1)
