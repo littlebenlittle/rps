@@ -1,10 +1,12 @@
 
 from abc import ABC, abstractmethod, abstractproperty
 
-# TODO: centralize logging 2019-12-01Z15:30:32
 import logging
-logging.basicConfig(filename='/dev/null', level=logging.DEBUG)
+import sys
 
+logger = logging.getLogger(__name__)
+handler = logging.StreamHandler(sys.stderr)
+logger.setLevel(logging.WARN)
 
 class GameState(ABC):
 
@@ -17,9 +19,14 @@ class GameState(ABC):
     @abstractmethod
     def get_random_next_state(self): pass
 
+    # TODO: use abc 2019-12-06Z21:02:27
+    @abstractmethod
+    def __hash__(self): pass
+
 
 class Node(ABC):
 
+    # TODO: metaclass with factory for __init__ 2019-12-06Z20:06:40
     def __init__(self, content=None, parent=None):
         if parent:
             assert isinstance(parent, Node)
@@ -40,6 +47,12 @@ class Node(ABC):
         for c in self._children:
             yield c
 
+    def add_child(self, child):
+        assert self.content.__class__ == child.content.__class__
+        self._children.append(child)
+
+
+_MCTSNode_singletons = {}
 
 class MCTSNode(Node):
 
@@ -71,17 +84,28 @@ class MCTSNode(Node):
     def is_expanded(self):
         return self._is_expanded
 
+    # TODO: check the privacy requirements of this 2019-12-07Z12:04:27
+    @classmethod
+    def singleton(cls, state, parent=None):
+        h = hash(state)
+        if h in _MCTSNode_singletons.keys():
+            return _MCTSNode_singletons[h]
+        new_node = cls(state, parent)
+        _MCTSNode_singletons[h] = new_node
+        return new_node
+
     def expand(self):
-        if not self.is_expanded:
-            assert not self.is_expanded
-            for state in self.state.next_states:
-                self._children.append(MCTSNode(state, parent=self))
-            self._is_expanded = True
+        assert not self.is_expanded
+        for state in self.state.next_states:
+            self.add_child(MCTSNode.singleton(state, parent=self))
+        self._is_expanded = True
 
     def run_simulation(self):
+        # TODO: this does not seem to be working 2019-12-06Z21:24:57
         s = self.state
         while not s.is_terminal:
             s = s.get_random_next_state()
+            logger.debug(f'selected {s}')
         return s
 
     def backpropogate(self, utility):
@@ -91,16 +115,13 @@ class MCTSNode(Node):
         self._visits += 1
 
 
+# TODO: incorporate a tree library 2019-12-07Z11:57:39
 class MCTSTree:
 
     def __init__(self, root):
         assert isinstance(root, MCTSNode)
         self._root = root
-        self._nodes = [root]
-
-    def __repr__(self):
-        s = '\n'.join(['    ' + n.__repr__() for n in self.nodes])
-        return f"<MCTSTree\nnodes:\n{s}\n>"
+        self._nodes = set([root])
 
     @property
     def nodes(self):
@@ -110,7 +131,7 @@ class MCTSTree:
     def add_nodes(self, nodes):
         for n in nodes:
             assert isinstance(n, MCTSNode)
-        self._nodes.extend(nodes)
+            self._nodes.add(n)
 
     @classmethod
     def from_state(cls, state):
@@ -127,19 +148,39 @@ def _UCB1(node):
     return exploit + explore
 
 
-def mcts(state, max_simulations, utility_fn):
+def get_next_node(tree):
+    current = max(tree.nodes, key=_UCB1)
+    logger.info(f'selected {current.state} with UCB1 of {_UCB1(current)}')
+    while current.is_expanded:
+        if current.state.is_terminal:
+            logger.info(f'*** terminal state found ***')
+            logger.info(f'state: {current.state}')
+            break
+        logger.debug(f'node already expanded. selecting from children')
+        current = max(current.children, key=_UCB1)
+        logger.debug(f'selected {current.state} with UCB1 of {_UCB1(current)}')
+    logger.info(f'selected {current.state} with UCB1 of {_UCB1(current)}')
+    return current
+
+
+def mcts(state, max_simulations, utility_fn, verbose=False): 
     tree = MCTSTree.from_state(state)
-    num_expanded = 0
-    while num_expanded < max_simulations:
-        current = max(tree.nodes, key=_UCB1)
-        while current.is_expanded:
-            current = max(current.children, key=_UCB1)
-        if current.visits == 0:
+    num_simulations = 0
+    while num_simulations < max_simulations:
+        logger.info('*** selecting node with highest UCB1 value ***')
+        current = get_next_node(tree)
+        if current.visits == 0 or current.state.is_terminal:
+            logger.info('*** node has not been visited. simulating')
             s = current.run_simulation()
+            num_simulations += 1
             utility = utility_fn(s)
             current.backpropogate(utility)
+            logger.info(f'simulated utility: {utility}')
             continue
+        logger.info('*** node already visited. expanding ***')
         current.expand()
+        logger.info('children found')
+        for c in current.children:
+            logger.info(f' - {c.state} parent={c.parent.state}')
         tree.add_nodes(current.children)
-        num_expanded += 1
     return tree

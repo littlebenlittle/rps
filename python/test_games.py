@@ -3,14 +3,20 @@ import numpy as np
 from games import NimState, TTTState
 from ttt import BEGIN
 
+import logging
+import sys
+logger = logging.getLogger(__name__)
+handler = logging.StreamHandler(sys.stderr)
+logger.setLevel(logging.INFO)
+
 
 def test_NimState():
-    assert NimState(25, num_takeaway=5) == NimState(25, num_takeaway=5) 
-    assert NimState(25, num_takeaway=3) == NimState(25) 
-    assert NimState(25, num_takeaway=3) != NimState(24) 
-    assert NimState(2).is_terminal
-    assert not NimState(3, num_takeaway=2).is_terminal
-    s = NimState(25)
+    assert NimState(25, 1, num_takeaway=5) == NimState(25, 1, num_takeaway=5) 
+    assert NimState(25, 1, num_takeaway=3) == NimState(25, 1) 
+    assert NimState(25, 1, num_takeaway=3) != NimState(24, 1) 
+    assert NimState(2, 1).is_terminal
+    assert not NimState(3, 1, num_takeaway=2).is_terminal
+    s = NimState(25, 1)
     for s_ in s.next_states:
         assert s.num_takeaway == s_.num_takeaway
     for _ in range(100):
@@ -21,24 +27,25 @@ def test_NimState():
 def test_TTTState():
     assert TTTState.from_array(BEGIN) \
            == TTTState(np.zeros([3,3]), np.zeros([3,3]))
-    s = TTTState.from_array(np.array(
+    a = TTTState.from_array(np.array(
         [[1,0,2],
          [0,0,1],
          [1,0,2]]
     ))
-    assert s == TTTState(
+    b = TTTState(
         np.array(
             [[1,0,0],
              [0,0,1],
              [1,0,0]]
         ),
         np.array(
-            [[0,0,2],
+            [[0,0,1],
              [0,0,0],
-             [0,0,2]]
+             [0,0,1]]
         ),
     )
-    assert not s.is_terminal
+    assert a == b
+    assert not a.is_terminal
     assert TTTState.from_array(np.array(
         [[1,0,2],
          [0,1,2],

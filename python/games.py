@@ -3,23 +3,39 @@ import numpy as np
 from mcts import GameState
 from ttt import BEGIN, WIN_FILTERS
 
+import logging
+import sys
+
+logger = logging.getLogger(__name__)
+handler = logging.StreamHandler(sys.stderr)
+logger.setLevel(logging.WARN)
 
 class NimState(GameState):
 
-    def __init__(self, num_beads, num_takeaway=3):
+    def __init__(self, num_beads, player_turn, num_takeaway=3):
         self._num_beads = num_beads
+        assert player_turn in (1,2)
+        self._player_turn = player_turn
         self._num_takeaway = num_takeaway
 
     def __repr__(self):
         return f'<NimState: {self._num_beads}>'
 
     def __eq__(self, other):
-        return self._num_beads == other._num_beads \
-                and self._num_takeaway == other._num_takeaway
+        if not isinstance(other, self.__class__):
+            return False
+        return hash(self) == hash(other) 
+
+    def __hash__(self):
+        return hash((self.num_beads, self.num_takeaway))
 
     @property
     def num_takeaway(self):
         return self._num_takeaway
+
+    @property
+    def player_turn(self):
+        return self._player_turn
 
     @property
     def num_beads(self):
@@ -31,17 +47,23 @@ class NimState(GameState):
 
     @property
     def next_states(self):
+        if self.is_terminal:
+            return None
         for n in range(1, self._num_takeaway+1):
-            yield NimState(
-                self.num_beads - n,
+            s = NimState(
+                max(self.num_beads - n, 0),
+                1 if self.player_turn == 2 else 2,
                 self.num_takeaway,
             )
+            logger.debug(s)
+            yield s
 
     def get_random_next_state(self):
         from random import choice
         n = choice(range(1, self.num_takeaway+1))
         return NimState(
             self.num_beads - n,
+            1 if self.player_turn == 2 else 2,
             self.num_takeaway,
         )
 
@@ -49,19 +71,26 @@ class NimState(GameState):
 class TTTState(GameState):
 
     def __init__(self, x_locations, o_locations):
-        self._x_loc = x_locations
-        self._o_loc = o_locations
+        self._x_loc = x_locations.astype(np.int32)
+        self._o_loc = o_locations.astype(np.int32)
         self._winner = None
 
     def __repr__(self):
         # TODO: pretty print Xs and Os 2019-12-02Z12:54:24
         image = self.x_loc.copy()
         image += self.o_loc * 2
-        return f"<TTTState\n{image}"
+        return f"\n<TTTState {image[0]}\n" \
+            + " " * 10 + f"{image[1]}\n" \
+            + " " * 10 + f"{image[2]}>"
 
     def __eq__(self, other):
-        return (self._x_loc == other.x_loc).sum() \
-               and (self._o_loc == other.o_loc).sum()
+        if not isinstance(other, self.__class__):
+            return False
+        return hash(self) == hash(other) 
+
+    def __hash__(self):
+        return hash((self.x_loc.dumps(), self.o_loc.dumps()))
+
 
     @property
     def x_loc(self):
