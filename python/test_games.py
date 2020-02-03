@@ -60,10 +60,6 @@ def test_TTTState():
     for _ in range(100):
         s = TTTState.from_array(BEGIN)
         while not s.is_terminal:
-            try:
-                s_ = s.get_random_next_state()
-            except IndexError:
-                print(s)
-                print(s_)
+            s_ = s.get_random_next_state()
             assert s_ in list(s.next_states)
             s = s_

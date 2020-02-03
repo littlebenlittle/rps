@@ -3,6 +3,9 @@ from games import NimState, TTTState
 from mcts import mcts, MCTSTree, MCTSNode
 from ttt import BEGIN
 
+# TODO: profiling 2019-12-07Z13:10:33
+
+# TODO: centralize logging 2019-12-07Z13:08:19
 import logging
 import sys
 
@@ -21,7 +24,7 @@ def test_mcts():
     state = TTTState.from_array(BEGIN)
     tree = mcts(
         state=state,
-        max_simulations=1000,
+        max_simulations=10,
         utility_fn=(lambda s:
             1  if s.winner == 'X' else
             -1 if s.winner == 'O'
@@ -40,6 +43,7 @@ def test_MCTSNode():
     assert node.state != nim_state_other
     assert len(set(node.children)) == 0
     node.expand()
+    logging.info(node.state)
     assert len(set(node.children)) != 0
     try:
         node.expand()

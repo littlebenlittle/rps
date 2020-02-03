@@ -3,7 +3,84 @@ platform linux -- Python 3.6.9, pytest-5.3.1, py-1.8.0, pluggy-0.13.1
 rootdir: /home/ben/rps
 collected 5 items
 
-python/test_games.py ..                                                  [ 40%]
+python/test_games.py FF                                                  [ 40%]
 python/test_mcts.py ...                                                  [100%]
 
-============================== 5 passed in 5.17s ===============================
+=================================== FAILURES ===================================
+________________________________ test_NimState _________________________________
+
+    def test_NimState():
+        assert NimState(25, 1, num_takeaway=5) == NimState(25, 1, num_takeaway=5)
+        assert NimState(25, 1, num_takeaway=3) == NimState(25, 1)
+        assert NimState(25, 1, num_takeaway=3) != NimState(24, 1)
+        assert NimState(2, 1).is_terminal
+        assert not NimState(3, 1, num_takeaway=2).is_terminal
+        s = NimState(25, 1)
+        for s_ in s.next_states:
+            assert s.num_takeaway == s_.num_takeaway
+        for _ in range(100):
+            s_ = s.get_random_next_state()
+>           assert s_ in list(s.next_states)
+E           assert <NimState: 24> in [<NimState: 23>, <NimState: 22>, <NimState: 21>, <NimState: 22>, <NimState: 21>, <NimState: 20>, ...]
+E            +  where [<NimState: 23>, <NimState: 22>, <NimState: 21>, <NimState: 22>, <NimState: 21>, <NimState: 20>, ...] = list(<generator object next_states at 0x7fc065f28af0>)
+E            +    where <generator object next_states at 0x7fc065f28af0> = <NimState: 25>.next_states
+
+python/test_games.py:24: AssertionError
+________________________________ test_TTTState _________________________________
+
+    def test_TTTState():
+        assert TTTState.from_array(BEGIN) \
+               == TTTState(np.zeros([3,3]), np.zeros([3,3]))
+        a = TTTState.from_array(np.array(
+            [[1,0,2],
+             [0,0,1],
+             [1,0,2]]
+        ))
+        b = TTTState(
+            np.array(
+                [[1,0,0],
+                 [0,0,1],
+                 [1,0,0]]
+            ),
+            np.array(
+                [[0,0,1],
+                 [0,0,0],
+                 [0,0,1]]
+            ),
+        )
+        assert a == b
+        assert not a.is_terminal
+        assert TTTState.from_array(np.array(
+            [[1,0,2],
+             [0,1,2],
+             [1,0,2]]
+        )).is_terminal
+        assert TTTState.from_array(np.array(
+            [[1,0,2],
+             [0,1,2],
+             [0,0,1]]
+        )).is_terminal
+        s = TTTState.from_array(BEGIN)
+        for _ in range(100):
+            s = TTTState.from_array(BEGIN)
+            while not s.is_terminal:
+>               s_ = s.get_random_next_state()
+
+python/test_games.py:63: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+python/games.py:146: in get_random_next_state
+    return choice(list(self.next_states))
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <random.Random object at 0xe4aab8>, seq = []
+
+    def choice(self, seq):
+        """Choose a random element from a non-empty sequence."""
+        try:
+            i = self._randbelow(len(seq))
+        except ValueError:
+>           raise IndexError('Cannot choose from an empty sequence') from None
+E           IndexError: Cannot choose from an empty sequence
+
+/usr/lib/python3.6/random.py:260: IndexError
+========================= 2 failed, 3 passed in 0.38s ==========================

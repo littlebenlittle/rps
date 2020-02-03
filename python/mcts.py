@@ -124,6 +124,10 @@ class MCTSTree:
         self._nodes = set([root])
 
     @property
+    def root(self):
+        return self._root
+
+    @property
     def nodes(self):
         for n in self._nodes:
             yield n
@@ -149,7 +153,7 @@ def _UCB1(node):
 
 
 def get_next_node(tree):
-    current = max(tree.nodes, key=_UCB1)
+    current = tree.root
     logger.info(f'selected {current.state} with UCB1 of {_UCB1(current)}')
     while current.is_expanded:
         if current.state.is_terminal:
@@ -170,7 +174,10 @@ def mcts(state, max_simulations, utility_fn, verbose=False):
         logger.info('*** selecting node with highest UCB1 value ***')
         current = get_next_node(tree)
         if current.visits == 0 or current.state.is_terminal:
-            logger.info('*** node has not been visited. simulating')
+            if current.state.is_terminal:
+                logger.info('*** reached terminal node ***')
+            else:
+                logger.info('*** node has not been visited. simulating ***')
             s = current.run_simulation()
             num_simulations += 1
             utility = utility_fn(s)
@@ -179,8 +186,6 @@ def mcts(state, max_simulations, utility_fn, verbose=False):
             continue
         logger.info('*** node already visited. expanding ***')
         current.expand()
-        logger.info('children found')
-        for c in current.children:
-            logger.info(f' - {c.state} parent={c.parent.state}')
+        logger.info(f'{len(set(current.children))} children found')
         tree.add_nodes(current.children)
     return tree

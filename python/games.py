@@ -10,6 +10,7 @@ logger = logging.getLogger(__name__)
 handler = logging.StreamHandler(sys.stderr)
 logger.setLevel(logging.WARN)
 
+
 class NimState(GameState):
 
     def __init__(self, num_beads, player_turn, num_takeaway=3):
@@ -49,14 +50,24 @@ class NimState(GameState):
     def next_states(self):
         if self.is_terminal:
             return None
-        for n in range(1, self._num_takeaway+1):
-            s = NimState(
-                max(self.num_beads - n, 0),
-                1 if self.player_turn == 2 else 2,
-                self.num_takeaway,
-            )
-            logger.debug(s)
-            yield s
+        if self.player_turn == 2:
+            for n in range(1, self._num_takeaway+1):
+                s = NimState(
+                    max(self.num_beads - n, 0),
+                    1,
+                    self.num_takeaway,
+                )
+                yield s
+        else:
+            for n in range(1, self._num_takeaway+1):
+                next_state = NimState(
+                    max(self.num_beads - n, 0),
+                    2,
+                    self.num_takeaway,
+                )
+                for s in next_state.next_states:
+                    if s is not None:
+                        yield s
 
     def get_random_next_state(self):
         from random import choice
@@ -113,16 +124,21 @@ class TTTState(GameState):
         from itertools import product
         num_xs = (np.ones([3,3]) * self.x_loc).sum()
         num_os = (np.ones([3,3]) * self.o_loc).sum()
+        x_locations = self.x_loc.copy()
+        o_locations = self.o_loc.copy()
         is_x_turn = (num_xs == num_os)
-        for i, j in product(range(3),range(3)):
-            if not (self.x_loc[i,j] or self.o_loc[i,j]):
-                x_locations = self.x_loc.copy()
-                o_locations = self.o_loc.copy()
-                if is_x_turn:
+        if is_x_turn:
+            for i, j in product(range(3),range(3)):
+                if not (self.x_loc[i,j] or self.o_loc[i,j]):
                     x_locations[i,j] = 1
-                else:
+                    yield TTTState(x_locations, o_locations)
+        else:
+            for i, j in product(range(3),range(3)):
+                if not (self.x_loc[i,j] or self.o_loc[i,j]):
                     o_locations[i,j] = 1
-                yield TTTState(x_locations, o_locations)
+                    next_state = TTTState(x_locations, o_locations)
+                    for s in next_state.next_states:
+                        yield s
 
     def get_random_next_state(self):
         # TODO: this is not efficient 2019-12-02Z13:03:16
